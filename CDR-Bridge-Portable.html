@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CDR Bridge — Портативная версия (смена версии CDR)</title>
+<style>
+  :root {
+    --emerald: #059669;
+    --emerald-dark: #047857;
+    --emerald-light: #ecfdf5;
+    --emerald-border: #a7f3d0;
+    --amber-bg: #fffbeb;
+    --amber-border: #fde68a;
+    --amber-text: #92400e;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: #f9fafb;
+    color: var(--text);
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  main { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+  header.app {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+  header.app .wrap { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--emerald); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; flex-shrink: 0;
+  }
+  header.app h1 { font-size: 17px; }
+  header.app .sub { font-size: 12px; color: var(--muted); }
+  .badge {
+    margin-left: auto; font-size: 12px; color: var(--emerald-dark);
+    background: var(--emerald-light); border: 1px solid var(--emerald-border);
+    padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  }
+  .card {
+    background: #fff; border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; margin-top: 18px;
+  }
+  .card h2 { font-size: 16px; margin-bottom: 4px; }
+  .card .desc { font-size: 13.5px; color: var(--muted); margin-bottom: 14px; }
+  #dropzone {
+    border: 2px dashed #d1d5db; border-radius: 12px;
+    padding: 34px 16px; text-align: center; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  #dropzone:hover, #dropzone.drag {
+    border-color: var(--emerald); background: var(--emerald-light);
+  }
+  #dropzone .icon { font-size: 34px; }
+  #dropzone .title { font-weight: 600; margin-top: 6px; }
+  #dropzone .hint { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #fileInput { display: none; }
+  .hidden { display: none !important; }
+  .info-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 2px; }
+  .chip {
+    font-size: 13px; background: var(--emerald-light); color: var(--emerald-dark);
+    border: 1px solid var(--emerald-border); border-radius: 999px; padding: 3px 11px;
+  }
+  .chip.gray { background: #f3f4f6; color: var(--muted); border-color: var(--border); }
+  label { display: block; font-size: 13.5px; font-weight: 600; margin: 16px 0 6px; }
+  select, button.btn {
+    font: inherit; border-radius: 10px; outline: none;
+  }
+  select {
+    width: 100%; max-width: 340px; padding: 10px 12px;
+    border: 1px solid var(--border); background: #fff; cursor: pointer;
+  }
+  button.btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--emerald); color: #fff; border: none;
+    padding: 12px 22px; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 16px; min-height: 46px;
+    transition: background .15s;
+  }
+  button.btn:hover { background: var(--emerald-dark); }
+  button.btn:disabled { background: #9ca3af; cursor: default; }
+  button.btn.big { width: 100%; justify-content: center; }
+  a.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--emerald); color: #fff; text-decoration: none;
+    padding: 12px 22px; border-radius: 10px; font-weight: 600;
+    margin-top: 16px; min-height: 46px;
+  }
+  a.btn:hover { background: var(--emerald-dark); }
+  .alert {
+    border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin-top: 14px;
+  }
+  .alert.amber { background: var(--amber-bg); border: 1px solid var(--amber-border); color: var(--amber-text); }
+  .alert.red { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  .alert.green { background: var(--emerald-light); border: 1px solid var(--emerald-border); color: #065f46; }
+  .alert b { display: block; margin-bottom: 2px; }
+  ul.tips { margin: 8px 0 0 18px; }
+  ul.tips li { margin-bottom: 5px; font-size: 13.5px; }
+  details { margin-top: 10px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; background: #fff; }
+  details summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  details p { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+  footer {
+    border-top: 1px solid var(--border); background: #fff;
+    padding: 14px 16px; text-align: center; font-size: 12.5px; color: var(--muted);
+  }
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result-name { word-break: break-all; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="wrap">
+    <div class="logo">CD</div>
+    <div>
+      <h1>CDR Bridge — Портативная версия</h1>
+      <div class="sub">Смена версии .cdr одним файлом, без установки и интернета</div>
+    </div>
+    <span class="badge">офлайн · данные не покидают компьютер</span>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>1. Откройте файл .cdr</h2>
+    <div class="desc">Перетащите файл в рамку или нажмите, чтобы выбрать. Файл обрабатывается прямо в браузере и никуда не отправляется.</div>
+
+    <div id="dropzone" role="button" tabindex="0" aria-label="Выбрать файл CDR">
+      <div class="icon">📁</div>
+      <div class="title">Перетащите .cdr сюда</div>
+      <div class="hint">или кликните, чтобы выбрать файл на компьютере</div>
+    </div>
+    <input type="file" id="fileInput" accept=".cdr">
+
+    <div id="fileInfo" class="hidden">
+      <div class="info-row">
+        <span class="chip gray" id="chipName">—</span>
+        <span class="chip gray" id="chipSize">—</span>
+      </div>
+      <div class="info-row">
+        <span class="chip" id="chipVersion">—</span>
+        <span class="chip gray" id="chipContainer">—</span>
+      </div>
+      <button class="btn" id="btnReset" type="button" style="margin-top:12px; padding:8px 14px; font-size:13.5px;">Выбрать другой файл</button>
+    </div>
+
+    <div id="fileError" class="alert red hidden"></div>
+  </div>
+
+  <div class="card hidden" id="changeCard">
+    <h2>2. Выберите нужную версию</h2>
+    <div class="desc">
+      Меняется только заголовок файла — слои, объекты и текст остаются нетронутыми.
+      Ничего не перекодируется и не пересоздаётся.
+    </div>
+
+    <label for="targetSelect">Целевая версия CorelDRAW</label>
+    <select id="targetSelect"></select>
+
+    <div class="alert amber">
+      <b>Важно знать</b>
+      <ul class="tips">
+        <li>Если макет использует эффекты новых версий (новые заливки, линзы), старая версия CorelDRAW может упростить их или не показать.</li>
+        <li>Сохраните резервную копию исходного файла.</li>
+      </ul>
+    </div>
+
+    <button class="btn big" id="btnConvert" type="button">Изменить версию и скачать</button>
+    <div id="convertError" class="alert red hidden"></div>
+    <div id="convertResult" class="hidden" style="margin-top:16px; border:1px solid var(--emerald-border); background:var(--emerald-light); border-radius:12px; padding:16px;">
+      <div class="alert green" style="margin:0 0 12px;"><b>Готово!</b> Файл пересохранён. Если скачивание не началось — нажмите кнопку ниже.</div>
+      <p class="result-name" id="resultName"></p>
+      <a class="btn big" id="resultLink" href="#">⬇ Скачать файл</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Частые вопросы</h2>
+    <details>
+      <summary>Почему это работает?</summary>
+      <p>Версия файла хранится в его заголовке (символ после «CDR» в начале файла). Мы заменяем только этот символ — все данные рисунка остаются теми же, поэтому слои и объекты не теряются.</p>
+    </details>
+    <details>
+      <summary>Старый CorelDRAW всё равно не открывает файл. Что делать?</summary>
+      <p>Значит, в макете есть структуры, которых не было в вашей версии. Тогда используйте конвертацию в SVG/PDF в полной веб-версии CDR Bridge и откройте её результат через «Файл → Импорт».</p>
+    </details>
+    <details>
+      <summary>Какие браузеры поддерживаются?</summary>
+      <p>Любой современный браузер на Windows 10/11: Edge, Chrome, Яндекс.Браузер, Firefox (обновляйте их до актуальной версии). Файл .html можно открыть двойным кликом — интернет не нужен.</p>
+    </details>
+  </div>
+</main>
+
+<footer>
+  CDR Bridge · Портативная версия · Полная версия с конвертацией в SVG / PDF / AI — в репозитории GitHub
+</footer>
+
+<script>
+"use strict";
+
+/* ------------------ Таблица версий CorelDRAW ------------------ */
+var PRODUCTS = {
+  3:"CorelDRAW 3",4:"CorelDRAW 4",5:"CorelDRAW 5",6:"CorelDRAW 6",
+  7:"CorelDRAW 7",8:"CorelDRAW 8",9:"CorelDRAW 9",10:"CorelDRAW 10",
+  11:"CorelDRAW 11",12:"CorelDRAW 12",13:"CorelDRAW X3",14:"CorelDRAW X4",
+  15:"CorelDRAW X5",16:"CorelDRAW X6",17:"CorelDRAW X7",18:"CorelDRAW X8",
+  19:"CorelDRAW 2017",20:"CorelDRAW 2018",21:"CorelDRAW 2019",22:"CorelDRAW 2020",
+  23:"CorelDRAW 2021",24:"CorelDRAW 2022",25:"CorelDRAW 2023",26:"CorelDRAW 2024",
+  27:"CorelDRAW 2025"
+};
+function charToNumeric(ch) {
+  if (ch >= "3" && ch <= "9") return ch.charCodeAt(0) - 48;
+  var code = ch.charCodeAt(0);
+  if (code >= 65 && code <= 90) return 10 + (code - 65);
+  return null;
+}
+function numericToChar(n) { return n < 10 ? String(n) : String.fromCharCode(65 + n - 10); }
+
+/* ------------------ Низкоуровневые чтения байтов ------------------ */
+function ascii(u8, start, len) {
+  var s = "";
+  for (var i = 0; i < len; i++) s += String.fromCharCode(u8[start + i]);
+  return s;
+}
+function u16at(u8, p) { return u8[p] | (u8[p + 1] << 8); }
+function u32at(u8, p) {
+  return (u8[p] | (u8[p + 1] << 8) | (u8[p + 2] << 16) | (u8[p + 3] << 24)) >>> 0;
+}
+
+/* ------------------ Состояние ------------------ */
+var state = {
+  fileName: "", baseName: "", size: 0,
+  container: null,          // 'RIFF' | 'ZIP'
+  whole: null,              // Uint8Array всего файла (для RIFF)
+  riffData: null,           // Uint8Array RIFF-потока (патчим его копию)
+  zipEntries: null,         // [{name, data}] для пересборки ZIP
+  version: null             // числовая версия
+};
+
+/* ------------------ Определение версии ------------------ */
+function parseRiffNumeric(u8) {
+  if (!u8 || u8.length < 12) return null;
+  if (ascii(u8, 0, 4) !== "RIFF") return null;
+  var form = ascii(u8, 8, 4);
+  if (form.indexOf("CDR") !== 0) return null;
+  return charToNumeric(form[3]);
+}
+
+/* --- Мини-ридер ZIP (центральный каталог) --- */
+function readZipEntries(u8) {
+  var eocd = -1;
+  var from = Math.max(0, u8.length - 66000);
+  for (var i = u8.length - 22; i >= from; i--) {
+    if (u32at(u8, i) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("Это ZIP-архив, но внутри нет структуры CorelDRAW.");
+  var total = u16at(u8, eocd + 10);
+  var p = u32at(u8, eocd + 16);
+  var entries = [];
+  var decoder = new TextDecoder();
+  for (var n = 0; n < total; n++) {
+    if (u32at(u8, p) !== 0x02014b50) break;
+    var method = u16at(u8, p + 10);
+    var compSize = u32at(u8, p + 20);
+    var nameLen = u16at(u8, p + 28);
+    var extraLen = u16at(u8, p + 30);
+    var commentLen = u16at(u8, p + 32);
+    var localOffset = u32at(u8, p + 42);
+    var name = decoder.decode(u8.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extraLen + commentLen;
+    entries.push({ name: name, method: method, compSize: compSize, localOffset: localOffset });
+  }
+  return entries;
+}
+
+async function entryData(u8, e) {
+  var lNameLen = u16at(u8, e.localOffset + 26);
+  var lExtraLen = u16at(u8, e.localOffset + 28);
+  var start = e.localOffset + 30 + lNameLen + lExtraLen;
+  var raw = u8.subarray(start, start + e.compSize);
+  if (e.method === 0) return raw.slice();
+  if (e.method === 8) {
+    if (typeof DecompressionStream === "undefined") {
+      throw new Error("Браузер не поддерживает распаковку. Откройте файл в актуальном Edge, Chrome или Яндекс.Браузере.");
+    }
+    var stream = new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  return null; // неизвестный метод — пропускаем запись
+}
+
+/* --- Мини-писатель ZIP (метод stored, имена UTF-8) --- */
+var CRC_TABLE = (function () {
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++) {
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  var c = 0xffffffff;
+  for (var i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+function buildZip(entries) {
+  var parts = [];
+  var centrals = [];
+  var offset = 0;
+  var encoder = new TextEncoder();
+
+  entries.forEach(function (e) {
+    var name = encoder.encode(e.name);
+    var crc = crc32(e.data);
+    var local = new Uint8Array(30 + name.length);
+    var dv = new DataView(local.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true);
+    dv.setUint16(6, 0x0800, true);   // UTF-8 имена
+    dv.setUint16(8, 0, true);        // stored
+    dv.setUint16(20, crc, true);
+    dv.setUint32(22, e.data.length, true);
+    dv.setUint32(26, e.data.length, true);
+    dv.setUint16(28, name.length, true);
+    local.set(name, 30);
+    parts.push(local, e.data);
+
+    var central = new Uint8Array(46 + name.length);
+    var cv = new DataView(central.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0x0800, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, e.data.length, true);
+    cv.setUint32(24, e.data.length, true);
+    cv.setUint16(28, name.length, true);
+    cv.setUint32(42, offset, true);
+    central.set(name, 46);
+    centrals.push(central);
+
+    offset += local.length + e.data.length;
+  });
+
+  var cdSize = centrals.reduce(function (s, c) { return s + c.length; }, 0);
+  var eocd = new Uint8Array(22);
+  var ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, entries.length, true);
+  ev.setUint16(10, entries.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, offset, true);
+
+  return new Blob(parts.concat(centrals, [eocd]), { type: "application/octet-stream" });
+}
+
+/* ------------------ Разбор выбранного файла ------------------ */
+async function handleFile(file) {
+  hide("fileError"); hide("changeCard"); hide("fileInfo"); hide("convertResult");
+  if (file.size > 400 * 1024 * 1024) {
+    showFileError("Файл больше 400 МБ — инструмент работает в памяти браузера и такие файлы не потянет. Используйте полную веб-версию.");
+    return;
+  }
+  try {
+    var buf = new Uint8Array(await file.arrayBuffer());
+    state = { fileName: file.name, baseName: file.name.replace(/\.[^.]+$/, ""), size: file.size,
+              container: null, whole: buf, riffData: null, zipEntries: null, version: null };
+
+    var v = parseRiffNumeric(buf);
+    if (v != null) {
+      state.container = "RIFF";
+      state.riffData = buf;
+      state.version = v;
+    } else if (buf.length > 4 && buf[0] === 0x50 && buf[1] === 0x4B) {
+      // ZIP-контейнер (CorelDRAW X6+)
+      var meta = readZipEntries(buf);
+      var entries = [];
+      var found = null;
+      for (var i = 0; i < meta.length; i++) {
+        var data = await entryData(buf, meta[i]);
+        if (data == null) continue;
+        entries.push({ name: meta[i].name, data: data });
+        if (found == null && parseRiffNumeric(data) != null) found = data;
+      }
+      if (found == null) {
+        showFileError("ZIP-контейнер прочитан, но данные CorelDRAW (content/riffData.cdr) внутри не найдены. Возможно, это не .cdr.");
+        return;
+      }
+      state.container = "ZIP";
+      state.zipEntries = entries;
+      state.riffData = found;
+      state.version = parseRiffNumeric(found);
+    } else {
+      showFileError("Сигнатура CorelDRAW не найдена: файл не является .cdr или повреждён.");
+      return;
+    }
+
+    showFileInfo();
+    show("fileInfo"); show("changeCard");
+    fillTargets();
+  } catch (err) {
+    showFileError("Не удалось разобрать файл: " + (err && err.message ? err.message : "неизвестная ошибка"));
+  }
+}
+
+function showFileInfo() {
+  document.getElementById("chipName").textContent = state.fileName;
+  document.getElementById("chipSize").textContent = formatSize(state.size);
+  document.getElementById("chipVersion").textContent =
+    state.version != null
+      ? "Версия " + state.version + " · " + (PRODUCTS[state.version] || "неизвестный продукт")
+      : "Версию определить не удалось";
+  document.getElementById("chipContainer").textContent =
+    "Контейнер: " + (state.container === "ZIP" ? "ZIP (CorelDRAW X6+)" : "RIFF (классический)");
+}
+
+function fillTargets() {
+  var select = document.getElementById("targetSelect");
+  select.innerHTML = "";
+  if (state.version == null) {
+    document.getElementById("btnConvert").disabled = true;
+    return;
+  }
+  var options = [];
+  for (var n = 27; n >= 7; n--) {
+    if (n < state.version) options.push(n);
+  }
+  // Дефолт — максимально близкая к текущей (часто её достаточно)
+  options.forEach(function (n) {
+    var opt = document.createElement("option");
+    opt.value = n;
+    opt.textContent = (PRODUCTS[n] || "CorelDRAW v" + n) + " (v" + n + ")";
+    select.appendChild(opt);
+  });
+  document.getElementById("btnConvert").disabled = options.length === 0;
+}
+
+/* ------------------ Смена версии и скачивание ------------------ */
+function patchRiff(u8, target) {
+  var out = u8.slice();
+  out[11] = numericToChar(target).charCodeAt(0);
+  return out;
+}
+
+async function doConvert() {
+  hide("convertError"); hide("convertResult");
+  var target = parseInt(document.getElementById("targetSelect").value, 10);
+  if (isNaN(target)) return;
+
+  var btn = document.getElementById("btnConvert");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Меняю версию…';
+
+  try {
+    await new Promise(function (r) { setTimeout(r, 30); }); // дать отрисоваться
+    var patchedInner = patchRiff(state.riffData, target);
+    var blob, outName = state.baseName + "-v" + target + ".cdr";
+
+    if (state.container === "RIFF") {
+      blob = new Blob([patchedInner], { type: "application/octet-stream" });
+    } else if (target < 16) {
+      // Старый CorelDRAW не понимает ZIP — отдаём чистый RIFF
+      blob = new Blob([patchedInner], { type: "application/octet-stream" });
+    } else {
+      var entries = state.zipEntries.map(function (e) {
+        return (parseRiffNumeric(e.data) != null)
+          ? { name: e.name, data: patchedInner }
+          : e;
+      });
+      blob = buildZip(entries);
+    }
+
+    var url = URL.createObjectURL(blob);
+    var link = document.getElementById("resultLink");
+    link.href = url;
+    link.download = outName;
+    document.getElementById("resultName").textContent = outName;
+    show("convertResult");
+    link.click();
+  } catch (err) {
+    var box = document.getElementById("convertError");
+    box.textContent = "Ошибка: " + (err && err.message ? err.message : "неизвестная ошибка");
+    show("convertError");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Изменить версию и скачать";
+  }
+}
+
+/* ------------------ Вспомогательные ------------------ */
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + " Б";
+  var kb = bytes / 1024;
+  if (kb < 1024) return Math.round(kb) + " КБ";
+  return (kb / 1024).toFixed(1) + " МБ";
+}
+function show(id) { document.getElementById(id).classList.remove("hidden"); }
+function hide(id) { document.getElementById(id).classList.add("hidden"); }
+function showFileError(msg) {
+  var box = document.getElementById("fileError");
+  box.textContent = msg;
+  show("fileError");
+}
+
+/* ------------------ Привязка событий ------------------ */
+var dropzone = document.getElementById("dropzone");
+var fileInput = document.getElementById("fileInput");
+
+dropzone.addEventListener("click", function () { fileInput.click(); });
+dropzone.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+});
+["dragover", "dragenter"].forEach(function (evt) {
+  dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.add("drag"); });
+});
+["dragleave", "drop"].forEach(function (evt) {
+  dropzone.addEventListener(evt, function (e) { e.preventDefault(); dropzone.classList.remove("drag"); });
+});
+dropzone.addEventListener("drop", function (e) {
+  var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener("change", function () {
+  if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+document.getElementById("btnReset").addEventListener("click", function () {
+  hide("fileInfo"); hide("changeCard"); hide("convertResult");
+  fileInput.value = "";
+});
+document.getElementById("btnConvert").addEventListener("click", doConvert);
+</script>
+</body>
+</html>
